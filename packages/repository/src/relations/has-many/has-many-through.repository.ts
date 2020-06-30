@@ -135,6 +135,7 @@ export class DefaultHasManyThroughRepository<
     ) => DataObject<TargetEntity>,
     public getTargetKeys: (throughInstances: ThroughEntity[]) => TargetID[],
     public getThroughConstraintFromSource: () => DataObject<ThroughEntity>,
+    public getTargetIds: (targetInstances: TargetEntity[]) => TargetID[],
     public getThroughConstraintFromTarget: (
       targetID: TargetID[],
     ) => DataObject<ThroughEntity>,
@@ -191,15 +192,29 @@ export class DefaultHasManyThroughRepository<
       constrainFilter(undefined, sourceConstraint),
       options?.throughOptions,
     );
-    const targetFkValues = this.getTargetKeys(throughInstances);
-    // delete through instances that have the targets that are going to be deleted
-    const throughFkConstraint = this.getThroughConstraintFromTarget(
-      targetFkValues,
-    );
-    await throughRepository.deleteAll(
-      constrainWhereOr({}, [sourceConstraint, throughFkConstraint]),
-    );
-
+    if (where) {
+      // only delete related through models
+      const targets = await targetRepository.find({where: where});
+      const targetIds = this.getTargetIds(targets);
+      if (targetIds.length !== 0) {
+        const targetConstraint = this.getThroughConstraintFromTarget(targetIds);
+        const constraints = {...targetConstraint, ...sourceConstraint};
+        await throughRepository.deleteAll(
+          constrainDataObject({}, constraints as DataObject<ThroughEntity>),
+          options?.throughOptions,
+        );
+      }
+    } else {
+      // otherwise, delete through models that relate to the sourceId
+      const targetFkValues = this.getTargetKeys(throughInstances);
+      // delete through instances that have the targets that are going to be deleted
+      const throughFkConstraint = this.getThroughConstraintFromTarget(
+        targetFkValues,
+      );
+      await throughRepository.deleteAll(
+        constrainWhereOr({}, [sourceConstraint, throughFkConstraint]),
+      );
+    }
     // delete target(s)
     const targetConstraint = this.getTargetConstraintFromThroughModels(
       throughInstances,

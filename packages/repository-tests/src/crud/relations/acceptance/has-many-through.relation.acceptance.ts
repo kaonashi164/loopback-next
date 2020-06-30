@@ -205,7 +205,37 @@ export function hasManyThroughRelationAcceptance(
       expect(cartItems).have.length(0);
     });
 
-    //FIXME(Agnes): should be able to do deletion based on filters
+    it('can delete instances based on the filter', async () => {
+      const item1 = await customerRepo
+        .cartItems(existingCustomerId)
+        .create({description: 'group 1'});
+      await customerRepo
+        .cartItems(existingCustomerId)
+        .create({description: 'group 2'});
+
+      let links = await customerCartItemLinkRepo.find();
+      let cartItems = await cartItemRepo.find();
+      expect(links).have.length(2);
+      expect(cartItems).have.length(2);
+
+      await customerRepo
+        .cartItems(existingCustomerId)
+        .delete({description: 'group 3'});
+      links = await customerCartItemLinkRepo.find();
+      cartItems = await cartItemRepo.find();
+      expect(links).have.length(2);
+      expect(cartItems).have.length(2);
+
+      await customerRepo
+        .cartItems(existingCustomerId)
+        .delete({description: 'group 2'});
+      links = await customerCartItemLinkRepo.find();
+      cartItems = await cartItemRepo.find();
+      expect(links).have.length(1);
+      expect(toJSON(cartItems)).to.containDeep(
+        toJSON([{id: item1.id, description: 'group 1'}]),
+      );
+    });
 
     it('can link a target model to a source model', async () => {
       const item = await cartItemRepo.create({description: 'an item'});
