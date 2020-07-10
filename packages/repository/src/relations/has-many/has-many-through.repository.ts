@@ -196,7 +196,7 @@ export class DefaultHasManyThroughRepository<
       // only delete related through models
       const targets = await targetRepository.find({where: where});
       const targetIds = this.getTargetIds(targets);
-      if (targetIds.length !== 0) {
+      if (targetIds.length > 0) {
         const targetConstraint = this.getThroughConstraintFromTarget(targetIds);
         const constraints = {...targetConstraint, ...sourceConstraint};
         await throughRepository.deleteAll(
