@@ -194,7 +194,9 @@ export class DefaultHasManyThroughRepository<
     );
     if (where) {
       // only delete related through models
-      const targets = await targetRepository.find({where: where});
+      // TODO(Agnes): this performance can be improved by only fetching related data
+      // TODO: add target ids to the `where` constraint
+      const targets = await targetRepository.find({where});
       const targetIds = this.getTargetIds(targets);
       if (targetIds.length > 0) {
         const targetConstraint = this.getThroughConstraintFromTarget(targetIds);

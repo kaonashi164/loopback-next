@@ -220,7 +220,7 @@ export function hasManyThroughRelationAcceptance(
 
       await customerRepo
         .cartItems(existingCustomerId)
-        .delete({description: 'group 3'});
+        .delete({description: 'does not exist'});
       links = await customerCartItemLinkRepo.find();
       cartItems = await cartItemRepo.find();
       expect(links).have.length(2);
